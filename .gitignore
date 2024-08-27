@@ -67,7 +67,7 @@ Thumbs.db
 *.synctex.gz*
 *.tex.backup
 
-# large collada files
-*.dae
+# Large orca file
+*orca5.dae
 
 !.gitignore
