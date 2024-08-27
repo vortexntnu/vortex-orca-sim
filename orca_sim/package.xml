@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>orca_sim</name>
+  <version>0.1.0</version>
+  <description>Simulator for Orca</description>
+
+  <maintainer email="andeshog@stud.ntnu.no"></maintainer>
+
+  <license>MIT</license>
+  
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
