@@ -1,18 +1,19 @@
 from simple_launch import SimpleLauncher, GazeboBridge
 
-def generate_launch_description():
+sl = SimpleLauncher(use_sim_time=True)
     
-    sl = SimpleLauncher(use_sim_time=True)
-    
-    # Declare arguments
-    sl.declare_arg('gui', default_value=True)
-    sl.declare_arg('namespace', default_value='orca')
-    sl.declare_arg('ground_truth', default_value=True)
-    sl.declare_arg('camera', default_value=True)
-    sl.declare_arg('gazebo_world_name', default_value='none')
+# Declare arguments
+sl.declare_arg('gui', default_value=True)
+sl.declare_arg('namespace', default_value='orca')
+sl.declare_arg('ground_truth', default_value=True)
+sl.declare_arg('camera', default_value=True)
+sl.declare_arg('gazebo_world_name', default_value='none')
+sl.declare_arg('jsp', False)
 
-    # Declare initial pose
-    sl.declare_gazebo_axes(x=1., y=0., z=1., roll=0., pitch=0., yaw=0.)
+# Declare initial pose
+sl.declare_gazebo_axes(x=1., y=0., z=1., roll=0., pitch=0., yaw=0.)
+
+def launch_setup():
 
     # Handle GUI argument
     with sl.group(if_arg='gui'):
@@ -27,9 +28,14 @@ def generate_launch_description():
 
     ns = sl.arg('namespace')
 
-    # Include state publisher
-    sl.include('orca_sim', 'state_publisher_launch.py',
-               launch_arguments={'namespace': ns, 'use_sim_time': sl.sim_time})
+    with sl.group(ns=ns):
+
+        # xacro parsing + change moving joints to fixed if no Gazebo here
+        xacro_args = {'namespace': ns, 'simulation': sl.sim_time}
+        sl.robot_state_publisher('orca_sim', 'orca.xacro', xacro_args=xacro_args)
+
+        with sl.group(if_arg='jsp'):
+            sl.joint_state_publisher(True)
                
     with sl.group(ns=ns):
         # URDF spawner to Gazebo
@@ -55,6 +61,7 @@ def generate_launch_description():
         # Camera
         if sl.arg('camera'):
             bridges.append(GazeboBridge(f'{ns}/image', 'image', 'sensor_msgs/Image', GazeboBridge.gz2ros))
+            bridges.append(GazeboBridge(f'{ns}/camera_info', 'camera_info', 'sensor_msgs/CameraInfo', GazeboBridge.gz2ros))
 
         # sonar (lidar)
         bridges.append(GazeboBridge(f'{ns}/sonar_scan', 'sonar_scan', 'sensor_msgs/LaserScan', GazeboBridge.gz2ros))
@@ -78,4 +85,6 @@ def generate_launch_description():
             sl.node('pose_to_tf', parameters={'child_frame': ns + '/base_link_gt'})
 
     return sl.launch_description()
+
+generate_launch_description = sl.launch_description(launch_setup)
 
